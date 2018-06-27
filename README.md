@@ -4,6 +4,10 @@ Terraform module to provision a DynamoDB table with autoscaling.
 
 Autoscaler scales up/down the provisioned OPS for the DynamoDB table based on the load.
 
+## What I changed
+
+The original `terraform-aws-dynamodb` module from [CloudPosse](https://cloudposse.com/) required a `range_key` when creating DynamoDB tables. In our case, ... that's not always the case Hence, we needed a version of that module without a required `range_key`. Here it is ...
+
 ## Requirements
 
 This module requires [AWS Provider](https://github.com/terraform-providers/terraform-provider-aws) `>= 1.17.0`
@@ -84,7 +88,7 @@ module "dynamodb_table" {
 | `stage`                         | ``           | Stage (_e.g._ `prod`, `dev`, `staging`)                                        | Yes      |
 | `name`                          | ``           | Name  (_e.g._ `app` or `cluster`)                                              | Yes      |
 | `hash_key`                      | ``           | DynamoDB table Hash Key                                                        | Yes      |
-| `range_key`                     | ``           | DynamoDB table Range Key                                                       | Yes      |
+| `range_key`                     | ``           | DynamoDB table Range Key                                                       | No       |
 | `ttl_attribute`                 | ``           | DynamoDB table TTL attribute                                                   | No       |
 | `enable_streams`                | `false`      | Enable DynamoDB streams                                                        | No       |
 | `stream_view_type`              | ``           | When an item in the table is modified, what information is written to the stream | If `enable_streams` is true |

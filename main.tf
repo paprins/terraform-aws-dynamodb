@@ -19,6 +19,14 @@ locals {
     },
     "${var.dynamodb_attributes}",
   ]
+
+  no_range_key_attrs = [
+    {
+      name = "${var.hash_key}"
+      type = "S"
+    },
+    "${var.dynamodb_attributes}",
+  ]
 }
 
 resource "null_resource" "global_secondary_indexes" {
@@ -26,7 +34,7 @@ resource "null_resource" "global_secondary_indexes" {
   triggers = "${var.global_secondary_index_map[count.index]}"
 }
 
-resource "aws_dynamodb_table" "default" {
+resource "aws_dynamodb_table" "default_range_key" {
   name             = "${module.dynamodb_label.id}"
   read_capacity    = "${var.autoscale_min_read_capacity}"
   write_capacity   = "${var.autoscale_min_write_capacity}"
@@ -58,6 +66,45 @@ resource "aws_dynamodb_table" "default" {
   tags = "${module.dynamodb_label.tags}"
 }
 
+resource "aws_dynamodb_table" "default_no_range_key" {
+  count            = "${var.range_key != "" ? 0 : 1}"
+  name             = "${module.dynamodb_label.id}"
+  read_capacity    = "${var.autoscale_min_read_capacity}"
+  write_capacity   = "${var.autoscale_min_write_capacity}"
+  hash_key         = "${var.hash_key}"
+  stream_enabled   = "${var.enable_streams}"
+  stream_view_type = "${var.stream_view_type}"
+
+  server_side_encryption {
+    enabled = "${var.enable_encryption}"
+  }
+
+  point_in_time_recovery {
+    enabled = "${var.enable_point_in_time_recovery}"
+  }
+
+  lifecycle {
+    ignore_changes = ["read_capacity", "write_capacity"]
+  }
+
+  attribute              = ["${local.no_range_key_attrs}"]
+  global_secondary_index = ["${var.global_secondary_index_map}"]
+
+  ttl {
+    attribute_name = "${var.ttl_attribute}"
+    enabled        = "${var.enable_ttl}"
+  }
+
+  tags = "${module.dynamodb_label.tags}"
+}
+
+locals {
+  dynamodb_table_name   = "${var.range_key != "" ? "${element(concat(aws_dynamodb_table.default_range_key.*.id, list("")), 0)}" : "${element(concat(aws_dynamodb_table.default_no_range_key.*.id, list("")), 0)}"}"
+  dynamodb_table_arn    = "${var.range_key != "" ? "${element(concat(aws_dynamodb_table.default_range_key.*.arn, list("")),0)}" : "${element(concat(aws_dynamodb_table.default_no_range_key.*.arn, list("")), 0)}"}"
+  dynamodb_stream_arn   = "${var.range_key != "" ? "${element(concat(aws_dynamodb_table.default_range_key.*.stream_arn, list("")),0)}" : "${element(concat(aws_dynamodb_table.default_no_range_key.*.stream_arn, list("")), 0)}"}"
+  dynamodb_stream_label = "${var.range_key != "" ? "${element(concat(aws_dynamodb_table.default_range_key.*.stream_label, list("")),0)}" : "${element(concat(aws_dynamodb_table.default_no_range_key.*.stream_label, list("")), 0)}"}"
+}
+
 module "dynamodb_autoscaler" {
   source                       = "git::https://github.com/cloudposse/terraform-aws-dynamodb-autoscaler.git?ref=tags/0.2.1"
   enabled                      = "${var.enable_autoscaler}"
@@ -66,8 +113,8 @@ module "dynamodb_autoscaler" {
   name                         = "${var.name}"
   delimiter                    = "${var.delimiter}"
   attributes                   = "${var.attributes}"
-  dynamodb_table_name          = "${aws_dynamodb_table.default.id}"
-  dynamodb_table_arn           = "${aws_dynamodb_table.default.arn}"
+  dynamodb_table_name          = "${local.dynamodb_table_name}"
+  dynamodb_table_arn           = "${local.dynamodb_table_arn}"
   dynamodb_indexes             = ["${null_resource.global_secondary_indexes.*.triggers.name}"]
   autoscale_write_target       = "${var.autoscale_write_target}"
   autoscale_read_target        = "${var.autoscale_read_target}"

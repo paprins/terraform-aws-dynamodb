@@ -1,13 +1,13 @@
 output "table_name" {
-  value = "${aws_dynamodb_table.default.name}"
+  value = "${local.dynamodb_table_name}"
 }
 
 output "table_id" {
-  value = "${aws_dynamodb_table.default.id}"
+  value = "${local.dynamodb_table_name}"
 }
 
 output "table_arn" {
-  value = "${aws_dynamodb_table.default.arn}"
+  value = "${local.dynamodb_table_arn}"
 }
 
 output "global_secondary_index_names" {
@@ -15,9 +15,9 @@ output "global_secondary_index_names" {
 }
 
 output "table_stream_arn" {
-  value = "${aws_dynamodb_table.default.stream_arn}"
+  value = "${local.dynamodb_stream_arn}"
 }
 
 output "table_stream_label" {
-  value = "${aws_dynamodb_table.default.stream_label}"
+  value = "${local.dynamodb_stream_label}"
 }

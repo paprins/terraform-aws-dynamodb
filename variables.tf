@@ -1,6 +1,7 @@
 variable "namespace" {
   type        = "string"
   description = "Namespace (e.g. `cp` or `cloudposse`)"
+  default     = ""
 }
 
 variable "stage" {
@@ -92,6 +93,7 @@ variable "hash_key" {
 
 variable "range_key" {
   type        = "string"
+  default     = ""
   description = "DynamoDB table Range Key"
 }
 
@@ -99,6 +101,12 @@ variable "ttl_attribute" {
   type        = "string"
   default     = "Expires"
   description = "DynamoDB table TTL attribute"
+}
+
+variable "enable_ttl" {
+  type        = "string"
+  default     = "false"
+  description = "Enable DynamoDB Time to live attribute"
 }
 
 variable "enable_autoscaler" {
